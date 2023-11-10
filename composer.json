@@ -1,0 +1,39 @@
+{
+    "name" : "altamash80/dynamic-bootstrap-menu-laminasmvc-doctrine",
+    "description" : "Create dynamic menus via doctrine in Laminas MVC.",
+    "license" : "BSD-3-Clause",
+    "keywords" : [
+        "laminas",
+        "bootstrap",
+        "lrphpt",
+        "menu",
+        "dynamic"
+    ],
+    "authors" : [{
+        "name" : "Shah Mubashir Hussain",
+        "email" : "shah.mubashir@gmail.com"
+    }],
+    "support" : {
+        "issues" : "https://github.com/ALTAMASH80/Dynamic-Bootstrap-Menu-LaminasMVC-Doctrine/issues",
+        "source" : "https://github.com/ALTAMASH80/Dynamic-Bootstrap-Menu-LaminasMVC-Doctrine",
+        "rss" : "https://github.com/ALTAMASH80/Dynamic-Bootstrap-Menu-LaminasMVC-Doctrine/releases.atom"
+    },
+    "extra" : {
+        "lrphpt" : {
+            "component" : "LRPHPT"
+        }
+    },
+    "require" : {
+        "php" : "^7.3 || ^8.0",
+        "doctrine/doctrine-bundle": "^2.2",
+        "gedmo/doctrine-extensions": "^3.0",
+        "doctrine/persistence": "^2.1",
+        "altamash80/laminas-mvc-bootstrap-menu": "^1.0",
+        "doctrine/migrations": "^3.0.0"
+    },
+    "autoload" : {
+        "psr-4" : {
+            "LRPHPT\\MenuTree\\" : "src/"
+        }
+    }
+}
