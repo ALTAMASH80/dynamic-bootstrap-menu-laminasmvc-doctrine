@@ -43,7 +43,7 @@ class Menu
      *
      * @ORM\Column(name="route", type="string", length=255, nullable=true)
      */
-    #[ORM\Column(name: 'route', type: Types::STRING, length: 255, nullable=true)]
+    #[ORM\Column(name: 'route', type: Types::STRING, length: 255, nullable:true)]
     private $route;
 
     /**
@@ -51,7 +51,7 @@ class Menu
      *
      * @ORM\Column(name="resource", type="string", length=255, nullable=true)
      */
-    #[ORM\Column(name: 'resource', type: Types::STRING, length: 255, nullable=true)]
+    #[ORM\Column(name: 'resource', type: Types::STRING, length: 255, nullable:true)]
     private $resource;
 
     /**
@@ -59,7 +59,7 @@ class Menu
      *
      * @ORM\Column(name="uri", type="string", length=255, nullable=true)
      */
-    #[ORM\Column(name: 'uri', type: Types::STRING, length: 255, nullable=true)]
+    #[ORM\Column(name: 'uri', type: Types::STRING, length: 255, nullable:true)]
     private $uri;
     
     /**
