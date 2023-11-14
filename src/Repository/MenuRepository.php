@@ -10,6 +10,8 @@ use Gedmo\Tree\Entity\Repository\NestedTreeRepository;
 class MenuRepository extends NestedTreeRepository{
 
     protected $menuPageIndex = 'pages';
+    
+    protected $bindingRootNode = null;
 
     public function getMenuPages(string $menuRootNodeLabel = 'node'){
         $arr = [];
@@ -60,5 +62,65 @@ class MenuRepository extends NestedTreeRepository{
         }
 
         return $nestedTree;
+    }
+
+    protected function createPickleTreeArr(array $nodes = [])
+    {
+        $nestedTree = [];
+        $index = 0;
+        if ([] !== $nodes) {
+            // Node Stack. Used to help building the hierarchy
+            foreach ($nodes as $child) {
+                $nodeActions = [
+                    [
+                        'icon'=> 'fa fa-level-up',
+                        'title'=> 'Delete',
+                        'id'=> 'bind_' . $child['id'] . '_levelup',
+                    ],
+                    [
+                        'icon'=> 'fa fa-level-down',
+                        'title'=> 'Delete',
+                        'id'=> 'bind_' . $child['id'] . '_leveldown',
+                    ],
+                    [
+                        'icon'=> 'fa fa-edit',
+                        'title'=> 'Delete',
+                        'id'=> 'bind_' . $child['id'] . '_edit',
+                    ],
+                    [
+                        'icon'=> 'fa fa-trash',
+                        'title'=> 'Delete',
+                        'id'=> 'bind_' . $child['id'] . '_delete',
+                    ],
+                ];
+                $nestedTree[$index] = [
+                    'n_id' => $child['id'], 
+                    'n_title' => $child['label'],
+                    'n_parentid' => $this->bindingRootNode->getId() === $child['parent_id'] ? 0 : $child['parent_id'],
+                    'n_route' => $child['route'],
+                    'n_uri' => $child['uri'],
+                    'n_slug' => $child['slug'],
+                    'n_elements' => $nodeActions,
+                ];
+                $index++;
+            }
+        }
+
+        return $nestedTree;
+    }
+    
+    public function getPickleTreeArray(string $menuRootNodeLabel = 'node'){
+        $arr = [];
+        try{
+            $this->bindingRootNode = $this->findOneBy(['label' => $menuRootNodeLabel]);
+            if($this->bindingRootNode !== null){
+                $queryBuilder = $this->childrenQueryBuilder($this->bindingRootNode , false, ['root', 'lft']);
+                $arr = $queryBuilder->getQuery()->setHint(\Doctrine\ORM\Query::HINT_INCLUDE_META_COLUMNS, true)->getArrayResult();
+            }
+        }catch(\Exception $e){
+            throw $e;
+        }
+        
+        return $this->createPickleTreeArr($arr);
     }
 }

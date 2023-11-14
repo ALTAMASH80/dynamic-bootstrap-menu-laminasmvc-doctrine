@@ -3,6 +3,10 @@ declare(strict_types=1);
 
 namespace LRPHPT\MenuTree;
 
+use Laminas\ServiceManager\Factory\InvokableFactory;
+use Laminas\Router\Http\Literal;
+use Laminas\ServiceManager\AbstractFactory\ReflectionBasedAbstractFactory;
+
 return [
     'doctrine' => [
         'driver' => [
@@ -23,5 +27,33 @@ return [
             'lrphpt_navigation' => Factory\MenuFactory::class,
         ],
     ],
-    
+    'controllers' => [
+        'factories' => [Controller\IndexController::class => ReflectionBasedAbstractFactory::class,]
+    ],
+    'router' => [
+        'routes' => [
+            'lrphpt-menu' => [
+                'type'    => Literal::class,
+                'options' => [
+                    'route'    => '/lrphpt-menu',
+                    'defaults' => [
+                        'controller' => Controller\IndexController::class,
+                        'action'     => 'index',
+                    ],
+                ],
+            ],
+        ],
+    ],
+    'view_manager' => [
+        'template_path_stack' => [
+            __DIR__ . '/../view',
+        ],
+    ],
+    'lmc_rbac' => [
+        'guards' => [
+            'LmcRbacMvc\Guard\RouteGuard' => [
+                'lrphpt-menu*'         => ['guest'],
+            ]
+        ],
+    ],
 ];
