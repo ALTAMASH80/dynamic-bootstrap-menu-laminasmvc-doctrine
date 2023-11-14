@@ -61,7 +61,7 @@ class Menu
      */
     #[ORM\Column(name: 'uri', type: Types::STRING, length: 255, nullable:true)]
     private $uri;
-    
+
     /**
      * @var int|null
      *
@@ -106,7 +106,7 @@ class Menu
      * @ORM\Column(type="datetime")
      */
     private $created_at;
-    
+
     /**
      * @Gedmo\Timestampable(on="update")
      * @ORM\Column(type="datetime")
