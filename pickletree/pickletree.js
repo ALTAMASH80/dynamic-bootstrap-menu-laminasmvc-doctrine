@@ -1,4 +1,5 @@
 //Pickle tree component created by Kadir Bozat
+//Edited for personal use.
 
 class PickleTree {
     /**
@@ -12,6 +13,7 @@ class PickleTree {
         this.area = '';
         //available nodes list
         this.nodeList = {};
+        this.copyNodeList = {};
         //row create callback
         this.rowCreateCallback = obj.rowCreateCallback;
         //draw callback
@@ -26,6 +28,11 @@ class PickleTree {
         this.data = obj.c_data;
         //build tree
         this.build(obj.c_config);
+        
+        this.nodeCreatedAtRuntime = {};
+        this.changeParentNodes = {};
+        this.deletedNodes = {};
+        this.moveNodes = {};
 
         //start events 
         this.staticEvents();
@@ -57,6 +64,7 @@ class PickleTree {
             //drag start
             document.getElementById('div_pickletree').addEventListener("dragstart", e => {
                 //drag callback
+                this.dragstartNode = this.nodeList[(e.target.id.split('node_')[1])];
                 if (this.dragCallback !== undefined) {
                     this.dragCallback(this.nodeList[(e.target.id.split('node_')[1])]);
                 }
@@ -88,7 +96,13 @@ class PickleTree {
                     node.parent = { id: 0 };
                 } else {
                     node.parent = this.getNode(this.drag_target);
-
+                }
+                console.log(this.dragstartNode.parent.id);
+                console.log(node.old_parent.id);
+                console.log(node.old_parent.id === this.dragstartNode.parent.id);
+                if( node.old_parent.id !== this.dragstartNode.parent.id ){
+                    //save node in an object array of ids
+                    this.changeParentNodes[node.id] = node;
                 }
                 //set new parent for dragging
                 node.updateNode();
@@ -148,7 +162,6 @@ class PickleTree {
 
         //check config here!!
         for (let key in this.config) {
-
             if (c_config[key] !== undefined) {
                 this.config[key] = c_config[key];
             }
@@ -161,7 +174,16 @@ class PickleTree {
     }
 
     /**
-     * 
+     * @description Reset tree to it's original state.
+     */
+    resetTree(){
+        document.getElementById('tree_picklemain').innerHTML = '';
+        this.log('tree re-build started..');
+        this.drawData();
+    }
+
+    /**
+     *
      * @param {integer} id node id for finding node 
      */
     getNode(id) {
@@ -180,7 +202,7 @@ class PickleTree {
             if (this.nodeList[key].id === node.parent.id) {
                 this.nodeList[key].childs.push(node.id);
                 //show icon for childs
-                document.getElementById('i_' + this.nodeList[key].id).style.display = '';
+                //document.getElementById('i_' + this.nodeList[key].id).style.display = '';
             }
         }
     }
@@ -196,7 +218,6 @@ class PickleTree {
         }
     }
     //#endregion
-
 
     //#region Node Events
     /**
@@ -397,6 +418,10 @@ class PickleTree {
         this.drawNode(node);
         //logged
         this.log('Node is created (' + node.id + ')');
+        if (node.id.indexOf('lrphpt') > 0 ){
+            console.log('new node id is ' + node.id);
+            this.nodeCreatedAtRuntime[node.id] = node;
+        }
         //node is returned
         return node;
     }
@@ -411,6 +436,9 @@ class PickleTree {
         this.getNode(node.id.split('_')[1]).deleteNode();
         //clear old parent's childs if old parent info is exist
         if (node.old_parent !== undefined && node.old_parent.id !== 0) {
+            if(node.old_parent.value === undefined){
+                return false;
+            }
             this.nodeList[node.old_parent.value].childs = this.nodeList[node.old_parent.value].childs.filter(x => {
                 return x !== node.id;
             });
@@ -430,7 +458,7 @@ class PickleTree {
             }
         }
         set(node);
-        
+
         //log
         this.log('Node is created (' + node.id + ')');
         //return node
@@ -476,7 +504,7 @@ class PickleTree {
             a_ditem.href = 'javascript:;';
             a_ditem.setAttribute('dragable', true);
             a_ditem.setAttribute('drag-title', node.title)
-                //icon added to div
+            //icon added to div
             div_item.appendChild(a_ditem);
             div_item.classList.add('drop_target')
         }
@@ -601,11 +629,44 @@ class PickleTree {
             for (let i = 0; i < node.elements.length; i++) {
                 document.getElementById(node.elements[i].id).addEventListener('click', e => {
                     //toggle item childs
-                    console.log(e.target.parentNode.parentNode.parentNode.id);
+                    var ul = e.target.parentNode.parentNode.parentNode.parentNode;
+
+                    let clicked = e.target;
+                    let li      = clicked.parentNode.parentNode.parentNode;
+                    //console.log(li);
+                    let next    = li.nextElementSibling;               // <-- Code changed
+                    if (next != null) next = next.nextElementSibling;  // <-- Code inserted
+                    let prev    = li.previousElementSibling;
+                    //console.log(clicked.classList.contains('fa-level-up'));
                     let node = this.getNode(e.target.parentNode.parentNode.parentNode.id.split('_')[1]);
                     console.log(node);
+                    if (clicked.classList.contains('fa-level-down')) {
+                        ul.insertBefore(li, next);
+                        this.saveNodeChanges(node, li, 'move-down');
+                    } else if (clicked.classList.contains('fa-level-up')) {
+                        ul.insertBefore(li, prev);
+                        this.saveNodeChanges(node, li, 'move-up');
+                    } else if (clicked.classList.contains('fa-trash')) {
+                        li.remove();
+                        this.saveNodeChanges(node, li, 'delete');
+                    }
+                    //console.log(e.target.parentNode.parentNode.parentNode.id);
                 });
             }
+        }
+    }
+
+    saveNodeChanges(node, element, action){
+        if(action === 'move-down'){
+            element.parentNode.foreach((li, index )=> {
+                if(li.id === element.id && element != element.parentNode[index]){
+                    this.moveNodes[node.id] = node;
+                }
+            });
+        }else if(action === 'move-up'){
+            this.moveNodes[node.id] = node;
+        }else if(action === 'delete'){
+            this.deletedNodes[node.id] = node;
         }
     }
 
@@ -715,7 +776,6 @@ class PickleTree {
             }
             menu_item.style.top = obj.top + 'px';
         }
-
     }
     //#endregion
 }

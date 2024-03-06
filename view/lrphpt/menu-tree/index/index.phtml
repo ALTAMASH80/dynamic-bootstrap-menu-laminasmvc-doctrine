@@ -1,8 +1,14 @@
 <?php
 $this->headLink()->appendStylesheet($this->serverUrl('/pickletree/pickletree.css?v=20230712'));
-$this->inlineScript()->appendFile($this->serverUrl('/pickletree/pickletree.js?v=12345678'));
+$this->inlineScript()->appendFile($this->serverUrl('/pickletree/pickletree.js'));
 $json = json_encode($treeArray,true);
 ?>
+<style>
+span > i.fa{
+border: 1px solid;
+padding: 0 3px
+}
+</style>
 <div class="row">
 <h1>Menu Tree</h1>
 </div>
@@ -15,7 +21,12 @@ $json = json_encode($treeArray,true);
 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
   Launch static backdrop modal
 </button>
-
+<button type="button" class="btn btn-primary" id="tree-data-submit">
+  Submit
+</button>
+<form id="treeForm" method="post">
+  <textarea style="display:none" id="treeUpdatedData" name="treeUpdatedData" ></textarea>
+</form>
 <!-- Modal 
 <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
 <div class="modal modal-dialog fade" id="exampleModalLabel" data-bs-keyboard="false" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -75,7 +86,7 @@ const tree = new PickleTree({
             //start as folded or unfolded
             foldedStatus: false,
             //for logging
-            logMode: false,
+            logMode: true,
             //for switch element
             switchMode: true,
             //for automaticly select childs
@@ -93,9 +104,22 @@ const tree = new PickleTree({
     lrphptCreateVirtualInput.value = 0;
     document.body.appendChild(lrphptCreateVirtualInput);
     const createButton = document.getElementById('lrphpt_create_node');
+    const submitButton = document.getElementById('tree-data-submit');
+    submitButton.addEventListener('click', e => {
+        console.log('submit button');
+        if( lrphptCreateVirtualInput.value > 0 || 
+            Object.keys(tree.nodeCreatedAtRuntime).length > 0 || 
+            Object.keys(tree.moveNodes).length > 0 || 
+            Object.keys(tree.changeParentNodes).length > 0 ) {
+            let myJson = {"newNodes": tree.nodeCreatedAtRuntime, "movedNodes": tree.moveNodes, "parentNodes": tree.changeParentNodes};
+//             console.log(JSON.stringify(myJson));
+            document.getElementById('treeUpdatedData').value = JSON.stringify(myJson);
+            document.getElementById('treeForm').submit();
+        }
+    });
     createButton.addEventListener('click', e => {
         console.log('clicked button');
-        let obj = {n_id:'lrphpt' + lrphptCreateVirtualInput.value, n_title:document.getElementById("lrphpt_route_label").value, n_route_name:document.getElementById("lrphpt_route_name").value, n_uri:document.getElementById("lrphpt_uri").value, n_parentid:0, n_checked: true,
+        let obj = {n_value: 'lrphpt' + lrphptCreateVirtualInput.value, n_id:'lrphpt' + lrphptCreateVirtualInput.value, n_title:document.getElementById("lrphpt_route_label").value, n_route_name:document.getElementById("lrphpt_route_name").value, n_uri:document.getElementById("lrphpt_uri").value, n_parentid:0, n_checked: true,
             n_elements: [{
                 icon: 'fa fa-level-up',
                 title: 'Delete',
@@ -136,14 +160,5 @@ myModal.addEventListener('shown.bs.modal', function () {
   console.log('Modal open');
 });
 
-    /* for (let i = 0; i < 3; i++) {
-        tree.createNode('CSSSCRIPT _' + i, i);
-        for (let t = 0; t < 3; t++) {
-            tree.createNode('CSSSCRIPT 1_' + t + i, t + '_' + i + '_sub1', [], tree.getNode('node_' + i));
-            for (let j = 0; j < 3; j++) {
-                tree.createNode('CSSSCRIPT 1_' + t + i, t + '_' + i + '_sub2', [], tree.getNode('node_' + t + '_' + i + '_sub1'));
-            }
-        }
-    } */
 Script
 );

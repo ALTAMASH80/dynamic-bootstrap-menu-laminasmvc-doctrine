@@ -42,6 +42,16 @@ return [
                     ],
                 ],
             ],
+            'lrphpt-tabulator' => [
+                'type'    => Literal::class,
+                'options' => [
+                    'route'    => '/lrphpt-tabulator',
+                    'defaults' => [
+                        'controller' => Controller\IndexController::class,
+                        'action'     => 'tabulator',
+                    ],
+                ],
+            ],
         ],
     ],
     'view_manager' => [
