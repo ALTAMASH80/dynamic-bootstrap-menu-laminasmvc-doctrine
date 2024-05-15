@@ -21,57 +21,31 @@ return[
 ```
 
 Run the command line below to create and execute migration.
+
 ```
 ./vendor/bin/doctrine-module migrations:diff
 ./vendor/bin/doctrine-module migrations:execute
 ```
-### Insert Data Manually
-Dynamic creation of data is not implemented.
-```
 
-public function indexAction(){
-    $lrphptRootNode = new \LRPHPT\MenuTree\Entity\Menu();
-    $lrphptRootNode->setLabel('lrphpt');
-    $lrphptRootNode->setUri('#');
-    $homeUrl = \LRPHPT\MenuTree\Entity\Menu();
-    $homeUrl->setLabel('Home');
-    $homeUrl->setRoute('home');
-    $homeUrl->setParent($lrphptRootNode);
+## Mandatory check
 
-    $food = new \LRPHPT\MenuTree\Entity\Menu();
-    $food->setLabel('Food');
-    $food->setUri('https://github.com/doctrine-extensions/DoctrineExtensions/blob/main/doc/tree.md#retrieving-the-whole-tree-as-an-array');
-    $food->setParent($lrphptRootNode);
+1. **Copy the pickletree javscript folder and paste it in public folder.**
+2. Make sure you've **echo $this->inlineScript()** in your layout.phtml file or any layout file you're using.
 
-    $fruits = new \LRPHPT\MenuTree\Entity\Menu();
-    $fruits->setLabel('Fruits');
-    $fruits->->setUri('https://github.com/doctrine-extensions/DoctrineExtensions/blob/main/doc/tree.md#retrieving-the-whole-tree-as-an-array');
-    $fruits->setParent($food);
+## Access in browser
 
-    $vegetables = new \LRPHPT\MenuTree\Entity\Menu();
-    $vegetables->setTitle('Vegetables');
-    $vegetables->setUri('https://github.com/doctrine-extensions/DoctrineExtensions/blob/main/doc/tree.md#retrieving-the-whole-tree-as-an-array');
-    $vegetables->setParent($food);
+yourhost/lrphpt-menu
 
-    $carrots = new \LRPHPT\MenuTree\Entity\Menu();
-    $carrots->setLabel('Carrots');
-    $carrots->setUri('https://github.com/doctrine-extensions/DoctrineExtensions/blob/main/doc/tree.md#retrieving-the-whole-tree-as-an-array');
-    $carrots->setParent($vegetables);
+Create a root menu for access as shown below.
 
-    $lrphptRootNode2 = new \LRPHPT\MenuTree\Entity\Menu();
-    $lrphptRootNode2->setLabel('lrphpt another');
-    $lrphptRootNode2->setUri('#');
+![lrphpt-menu-landing-screen](https://github.com/ALTAMASH80/dynamic-bootstrap-menu-laminasmvc-doctrine/assets/3577323/656342f9-a410-4317-9b0f-75795624617d)
 
-    $this->em->persist($lrphptRootNode);
-    $this->em->persist($lrphptRootNode2);
-    $this->em->persist($home);
-    $this->em->persist($food);
-    $this->em->persist($fruits);
-    $this->em->persist($vegetables);
-    $this->em->persist($carrots);
-    $this->em->flush();
-}
-```
+After creating the root menu, start building the actual menu items as shown in the image below. 
+
+![lrphpt-menu-tree-example](https://github.com/ALTAMASH80/dynamic-bootstrap-menu-laminasmvc-doctrine/assets/3577323/3ef79d91-7b0c-4427-8fe5-dd4ccac8f2eb)
+
+![lrphpt-menu-tree-example2](https://github.com/ALTAMASH80/dynamic-bootstrap-menu-laminasmvc-doctrine/assets/3577323/88a238d6-1842-41ff-a082-01dd9836a8fe)
+
 
 ## Usage
 Add the below line in any layout.phtml file.
@@ -82,10 +56,13 @@ Add the below line in any layout.phtml file.
                     // Optional setting to use with LmcRbac route guard.
                     //->setAuthorizationService($this->LmcRbacAuthorizationServiceHelper())
                     ; ?>
-/*
+```
+
 Use the below configuration first by creating a navigation factory with someother_navigation. See this [link](https://github.com/ALTAMASH80/Dynamic-Bootstrap-Menu-LaminasMVC-Doctrine/blob/master/config/module.config.php#L23). Then write the below lines in the class file.
+
+```
 public function getName(){
-   return 'lrphpt another';
+   return 'footer-menu';
 }
 
 <?=$this->navigation('someother_navigation')
@@ -94,5 +71,5 @@ public function getName(){
                     // Optional setting to use with LmcRbac route guard.
                     //->setAuthorizationService($this->LmcRbacAuthorizationServiceHelper())
                     ; ?>
-*/
+
 ```
