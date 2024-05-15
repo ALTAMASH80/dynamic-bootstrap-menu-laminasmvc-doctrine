@@ -1,0 +1,45 @@
+<div class="row">
+<h1>Lrphpt Tree</h1>
+</div>
+
+<div class="row">
+<div class="card-columns">
+<?php foreach($rootNodes as $current):?>
+<div class="card">
+  <div class="card-header">
+    <a href="<?php echo $this->url('lrphpt-menu/detail', ['slug' => $current->getSlug(),'id' => $current->getId()])?>"><?php echo $current->getLabel()?></a>
+  </div>
+</div>
+<?php endforeach;?>
+</div>
+</div>
+
+<!-- Button trigger modal -->
+<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
+  Create a root node
+</button>
+
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="staticBackdropLabel">Create Node</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+<form id="treeForm" method="post" >
+      <div class="modal-body">
+        <div class="input-group mb-3">
+          <input id="lrphpt_route_label" type="text" name="label" class="form-control" placeholder="Route Label" aria-label="Route Label" aria-describedby="basic-addon2" />
+          <span class="input-group-text">Route Label</span>
+          <input id="lrphpt_route" type="hidden" name="route" value="home" />
+          <input id="lrphpt_uri" type="hidden" name="uri" value="#" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button id="lrphpt_create_node" type="Submit" class="btn btn-primary">Create Node</button>
+      </div>
+</form>
+    </div>
+  </div>
+</div>

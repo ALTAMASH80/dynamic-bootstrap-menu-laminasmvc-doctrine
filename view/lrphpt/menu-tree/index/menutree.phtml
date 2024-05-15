@@ -1,0 +1,150 @@
+<?php
+$this->headLink()->appendStylesheet($this->serverUrl('/pickletree/pickletree.css'));
+$this->inlineScript()->appendFile($this->serverUrl('/pickletree/pickletree.js'));
+$json = json_encode($treeArray,true);
+?>
+<style>
+span > i.fa{
+border: 1px solid;
+padding: 0 3px
+}
+</style>
+<div class="row">
+<h1><?=$rootNode->getLabel()?> - Lrphpt Tree</h1>
+</div>
+
+<div class="row">
+    <div id="div_tree" class="div_tree"></div>
+</div>
+
+<!-- Button trigger modal -->
+<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
+  Create a node
+</button>
+<button type="button" class="btn btn-primary" id="tree-data-submit">
+  Submit
+</button>
+<form id="treeForm" method="post">
+  <textarea style="display:none" id="treeUpdatedData" name="treeUpdatedData" ></textarea>
+</form>
+<!-- Modal 
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div class="modal modal-dialog fade" id="exampleModalLabel" data-bs-keyboard="false" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+-->
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="staticBackdropLabel">Create Node</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="input-group mb-3">
+          <input id="lrphpt_route_label" type="text" class="form-control" placeholder="Route Label" aria-label="Route Label" aria-describedby="basic-addon2">
+          <span class="input-group-text">Route Label</span>
+        </div>
+        <div class="input-group mb-3">
+          <input id="lrphpt_route_name" type="text" class="form-control" placeholder="Route Name" aria-label="Route Name" aria-describedby="basic-addon3">
+          <span class="input-group-text">Route Name</span>
+        </div>
+        <div class="input-group mb-3">
+          <input id="lrphpt_uri" type="text" class="form-control" placeholder="Uri or #" aria-label="Uri or #" aria-describedby="basic-addon4">
+          <span class="input-group-text">Uri</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button id="lrphpt_create_node" type="button" class="btn btn-primary">Create Node</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<?php 
+//https://stackoverflow.com/questions/7587646/how-do-i-move-an-element-up-down-one-position-in-tree
+//https://javascript.info/dom-nodes
+$this->inlineScript()->appendScript(<<<Script
+const tree = new PickleTree({
+        c_target: 'div_tree',
+        rowCreateCallback: (node) => {
+        },
+        switchCallback: (node) => {
+        },
+        drawCallback: () => {
+        },
+        dragCallback: (node) => {
+        },
+        dropCallback: (node) => {
+        },
+        c_config: {
+            //start as folded or unfolded
+            foldedStatus: false,
+            //for logging
+            logMode: false,
+            //for switch element
+            switchMode: true,
+            //for automaticly select childs
+            autoChild: true,
+            //for automaticly select parents
+            autoParent: true,
+            //for drag / drop
+            drag: true
+        },
+        c_data: {$json}
+    });
+
+    const lrphptCreateVirtualInput = document.createElement('input');
+    lrphptCreateVirtualInput.setAttribute('type', 'hidden');
+    lrphptCreateVirtualInput.value = 0;
+    document.body.appendChild(lrphptCreateVirtualInput);
+    const createButton = document.getElementById('lrphpt_create_node');
+    const submitButton = document.getElementById('tree-data-submit');
+    submitButton.addEventListener('click', e => {
+        if( lrphptCreateVirtualInput.value > 0 || 
+            Object.keys(tree.nodeCreatedAtRuntime).length > 0 || 
+            Object.keys(tree.moveNodes).length > 0 || 
+            Object.keys(tree.changeParentNodes).length > 0 ) {
+            let myJson = {"newNodes": tree.nodeCreatedAtRuntime, "movedNodes": tree.moveNodes, "parentNodes": tree.changeParentNodes};
+            document.getElementById('treeUpdatedData').value = JSON.stringify(myJson);
+            document.getElementById('treeForm').submit();
+        }
+    });
+    createButton.addEventListener('click', e => {
+        let obj = {n_value: 'lrphpt' + lrphptCreateVirtualInput.value, n_id:'lrphpt' + lrphptCreateVirtualInput.value, n_title:document.getElementById("lrphpt_route_label").value, n_route_name:document.getElementById("lrphpt_route_name").value, n_uri:document.getElementById("lrphpt_uri").value, n_parentid:0, n_checked: true,
+            n_elements: [{
+                icon: 'fa fa-level-up',
+                title: 'Delete',
+                id: 'auto_' + lrphptCreateVirtualInput.value + '_levelup',
+                onClick: (node) => {
+                }
+            }, {
+                icon: 'fa fa-level-down',
+                title: 'Delete',
+                id: 'auto_' + lrphptCreateVirtualInput.value + '_leveldown',
+                onClick: (node) => {
+                }
+            }, {
+                icon: 'fa fa-edit',
+                title: 'Edit',
+                id: 'auto_' + lrphptCreateVirtualInput.value + '_edit',
+                //context button click event
+                onClick: (node) => {
+                }
+            }, {
+                icon: 'fa fa-trash',
+                title: 'Delete',
+                id: 'auto_' + lrphptCreateVirtualInput.value + '_delete',
+                onClick: (node) => {
+                }
+            }]};
+        tree.createNode(obj);
+        lrphptCreateVirtualInput.value++;
+    });
+
+var myModal = document.getElementById('exampleModal');
+
+myModal.addEventListener('shown.bs.modal', function () {
+});
+
+Script
+);
