@@ -28,7 +28,6 @@
         "doctrine/doctrine-bundle": "^2.2",
         "gedmo/doctrine-extensions": "^3.0",
         "doctrine/persistence": "^2.1",
-        "altamash80/laminas-mvc-bootstrap-menu": "^1.0",
         "doctrine/migrations": "^3.0.0"
     },
     "autoload" : {

@@ -1,26 +1,36 @@
 # Dynamic-Bootstrap-Menu-LaminasMVC-Doctrine
 Create dynamic menus via doctrine in Laminas MVC.
 
-## Installation
+## Installation without LmcRbacMvc
 ```
+composer require altamash80/laminas-mvc-bootstrap-menu:"1.0.0"
 composer require altamash80/dynamic-bootstrap-menu-laminasmvc-doctrine
 ```
+
+## Installation with LmcRbacMvc
+```
+composer require altamash80/laminas-mvc-bootstrap-menu:"1.1.0"
+composer require altamash80/dynamic-bootstrap-menu-laminasmvc-doctrine
+```
+
 ## Dependency
 1. Doctrine
-2. Lrphpt Menu
-3. Laminas MVC(minimum)
+2. Navigation
+3. Lrphpt Menu
+4. Laminas MVC(minimum)
 
 ## Add Module in module config file
 Add the module name in module.config.php.
 ```
 return[
+    'Laminas\Navigation',
     'Lrphpt',
     'LRPHPT\MenuTree',
     'Application',
 ];
 ```
 
-Run the command line below to create and execute migration.
+Run the command line below to create and execute migration. To set up migration check this [link](https://github.com/ALTAMASH80/ALTAMASH80/blob/main/tutorials/Laminas-MVC-Doctrine/how-to-use-lmcuser-in-laminas-mvc-a-user-creation-module.md#setting-up-doctrine-and-doctrine-migrations-in-laminas-mvc).
 
 ```
 ./vendor/bin/doctrine-module migrations:diff
