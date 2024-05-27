@@ -14,6 +14,7 @@ use Gedmo\Mapping\Annotation as Gedmo;
  * @ORM\Entity(repositoryClass=\LRPHPT\MenuTree\Repository\MenuRepository::class)
  */
 #[Gedmo\Tree(type: 'nested')]
+#[Gedmo\Loggable()]
 #[ORM\Table(name: 'menu')]
 #[ORM\Entity(repositoryClass: \LRPHPT\MenuTree\Repository\MenuRepository::class)]
 class Menu
@@ -53,6 +54,14 @@ class Menu
      */
     #[ORM\Column(name: 'resource', type: Types::STRING, length: 255, nullable:true)]
     private $resource;
+    
+    /**
+     * @var string|null
+     *
+     * @ORM\Column(name="permission", type="string", length=255, nullable=true)
+     */
+    #[ORM\Column(name: 'permission', type: Types::STRING, length: 255, nullable:true)]
+    private $permission;
 
     /**
      * @var string|null
@@ -99,6 +108,8 @@ class Menu
      * @Gedmo\Slug(fields={"label"}, updatable=true)
      * @ORM\Column(type="string", length=255)
      */
+    #[Gedmo\Slug(fields:['label'], updateable: true)]
+    #[ORM\Column(name: 'slug', type: Types::STRING, length: 255)]
     private $slug;
 
     /**

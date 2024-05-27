@@ -1,6 +1,6 @@
 <?php
-$this->headLink()->appendStylesheet($this->serverUrl('/pickletree/pickletree.css'));
-$this->inlineScript()->appendFile($this->serverUrl('/pickletree/pickletree.js'));
+$this->headLink()->appendStylesheet($this->serverUrl('/pickletree/pickletree.css?v=1.2.1'));
+$this->inlineScript()->appendFile($this->serverUrl('/pickletree/pickletree.js?v=1.2.1'));
 $json = json_encode($treeArray,true);
 ?>
 <style>
@@ -10,7 +10,7 @@ padding: 0 3px
 }
 </style>
 <div class="row">
-<h1><?=$rootNode->getLabel()?> - Lrphpt Tree</h1>
+<h1><?=$this->escapeHtml($rootNode->getLabel())?> - Lrphpt Tree</h1>
 </div>
 
 <div class="row">
@@ -59,7 +59,54 @@ padding: 0 3px
     </div>
   </div>
 </div>
-
+<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="staticBackdropLabel">Update Node</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+          <form id="editFormNode" method="post">
+        <div class="input-group mb-3">
+          <input name="title" id="edit_lrphpt_route_label" type="text" class="form-control" placeholder="Route Label" aria-label="Route Label" aria-describedby="basic-addon2">
+          <span class="input-group-text">Route Label</span>
+        </div><input name="id" type="hidden" id="edit_lrphpt_id" />
+        <input name="slug" type="hidden" id="edit_lrphpt_slug" />
+        <div class="input-group mb-3">
+          <input  name="route_name" id="edit_lrphpt_route_name" type="text" class="form-control" placeholder="Route Name" aria-label="Route Name" aria-describedby="basic-addon3">
+          <span class="input-group-text">Route Name</span>
+        </div>
+        <div class="input-group mb-3">
+          <input  name="uri" id="edit_lrphpt_uri" type="text" class="form-control" placeholder="Uri or #" aria-label="Uri or #" aria-describedby="basic-addon4">
+          <span class="input-group-text">Uri</span>
+        </div>
+          </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button id="edit_lrphpt_update_node" type="button" class="btn btn-primary">Update</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal" id="await_judgement" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Delete an item</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to delete it?</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button id="youre_terminated" type="button" class="btn btn-primary">Positively</button>
+      </div>
+    </div>
+  </div>
+</div>
 <?php 
 //https://stackoverflow.com/questions/7587646/how-do-i-move-an-element-up-down-one-position-in-tree
 //https://javascript.info/dom-nodes
@@ -98,6 +145,18 @@ const tree = new PickleTree({
     lrphptCreateVirtualInput.value = 0;
     document.body.appendChild(lrphptCreateVirtualInput);
     const createButton = document.getElementById('lrphpt_create_node');
+    function delegate(el, evt, sel, handler) {
+        el.addEventListener(evt, function(event) {
+        var t = event.target;
+            while (t && t !== this) {
+                if (t.matches(sel)) {
+                    handler.call(t, event);
+                }
+                t = t.parentNode;
+            }
+        });
+    }
+
     const submitButton = document.getElementById('tree-data-submit');
     submitButton.addEventListener('click', e => {
         if( lrphptCreateVirtualInput.value > 0 || 
@@ -141,10 +200,60 @@ const tree = new PickleTree({
         lrphptCreateVirtualInput.value++;
     });
 
-var myModal = document.getElementById('exampleModal');
+jQuery(document).ready(function(){
+    jQuery('#edit_lrphpt_update_node').click(function(){
+        let node = tree.getNode(document.getElementById('edit_lrphpt_id').value);
+        let obj = {id: node.value, n_id:node.id, title:document.getElementById("edit_lrphpt_route_label").value, route_name:document.getElementById("edit_lrphpt_route_name").value, uri:document.getElementById("edit_lrphpt_uri").value, n_checked: true};
+        jQuery.ajax({
+            url: '/lrphpt-menu/update',
+            data: jQuery('#editFormNode').serialize(),
+            method: "POST",
+            dataType: "json"
+        }).done(function(jsonData){
+            try{
+                if(jsonData.status == 200){
+                    tree.updateNodeValues(jsonData.data);
+                }
+            }catch(e){}
 
-myModal.addEventListener('shown.bs.modal', function () {
+        }).always(function(){
+            jQuery('#editModal').modal('toggle');
+            document.getElementById('edit_lrphpt_update_node').innerHTML ='Update'; 
+        });
+    });
 });
+    delegate(document, "click", ".fa-edit", function(event) {
+        const nodeId = this.parentNode.parentNode.parentNode.id.split('_')[1];
+        editNode = tree.getNode(nodeId);
+        document.getElementById('edit_lrphpt_route_label').value = editNode.title;
+        document.getElementById('edit_lrphpt_route_name').value = editNode.route;
+        document.getElementById('edit_lrphpt_uri').value = editNode.uri;
+        document.getElementById('edit_lrphpt_id').value = editNode.value;
+        document.getElementById('edit_lrphpt_slug').value = editNode.slug;
+        var myModal = new bootstrap.Modal(document.getElementById('editModal'), {
+            keyboard: false
+        });
+
+        myModal.show();
+    });
+    delegate(document, "click", ".fa-trash", function(event) {
+        const nodeId = this.parentNode.parentNode.parentNode.id.split('_')[1];
+        editNode = tree.getNode(nodeId);
+        document.getElementById('edit_lrphpt_id').value = editNode.value;
+        document.getElementById('edit_lrphpt_slug').value = editNode.slug;
+        var myModal = new bootstrap.Modal(document.getElementById('await_judgement'), {
+            keyboard: false
+        });
+
+        myModal.show();
+    });
+    delegate(document, "click", "#youre_terminated", function(event) {
+        const nodeId = document.getElementById('edit_lrphpt_id').value;
+        editNode = tree.getNode(nodeId);
+        tree.deleteNode(editNode);
+
+        jQuery('#await_judgement').modal('toggle');
+    });
 
 Script
 );

@@ -164,3 +164,6 @@ ul li a {
     font-size: larger;
     margin: 3px 5px 3px 5px;
 }
+div[id^='div_g_node']:hover{
+    background-color: var(--bs-gray-200);
+}
