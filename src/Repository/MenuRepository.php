@@ -14,10 +14,17 @@ class MenuRepository extends NestedTreeRepository{
 
     protected $bindingRootNode = null;
 
-    public function getMenuPages(string $menuRootNodeLabel = 'node'){
+    /**
+     * 
+     * @param string $menuRootNodeSlug
+     * @return array
+     * @throws \Exception
+     */
+    public function getMenuPages(string $menuRootNodeSlug = 'node') : array
+    {
         $arr = [];
         try{
-            $dummyNode = $this->findOneBy(['slug' => $menuRootNodeLabel]);
+            $dummyNode = $this->findOneBy(['slug' => $menuRootNodeSlug]);
             if($dummyNode !== null){
                 $queryBuilder = $this->childrenQueryBuilder($dummyNode, false, ['root', 'lft']);
                 $arr = $queryBuilder->getQuery()->getArrayResult();
@@ -29,7 +36,129 @@ class MenuRepository extends NestedTreeRepository{
         return $this->getMyTree($arr);
     }
 
-    public function getMyTree(array $nodes = [])
+    /**
+     * 
+     * @param string $menuRootNodeSlug
+     * @return array
+     * @throws \Exception
+     */
+    public function getPickleTreeArray(string $menuRootNodeSlug = 'node') : array
+    {
+        $arr = [];
+        try{
+            $this->bindingRootNode = $this->findOneBy(['slug' => $menuRootNodeSlug]);
+            if($this->bindingRootNode !== null){
+                $queryBuilder = $this->childrenQueryBuilder($this->bindingRootNode , false, ['root', 'lft']);
+                $arr = $queryBuilder->getQuery()->setHint(\Doctrine\ORM\Query::HINT_INCLUDE_META_COLUMNS, true)->getArrayResult();
+            }
+        }catch(\Exception $e){
+            throw $e;
+        }
+
+        return $this->createPickleTreeArr($arr);
+    }
+
+    /**
+     * 
+     * @param array $submittedData
+     * @param Menu $dummyParentNode
+     * @return void
+     */
+    public function insertUpdateDataCollectedViaForm(array $submittedData = [], Menu $dummyParentNode = null) : void{
+        $menu = $createdNodes = [];
+        $newNodes = $submittedData['newNodes'];
+        $parentNodes = $submittedData['parentNodes'];
+        $movedNodes = $submittedData['movedNodes'];
+
+        /* Start of node creation loop. */
+        if(count($newNodes) > 0){
+            foreach($newNodes as $node){
+                $menu[$node['id']] = new Menu();
+                $menu[$node['id']]->setLabel($node['title']);
+                $menu[$node['id']]->setRoute($node['route']);
+
+                if($node['parent']['id'] === 0){/* Assign as root node. */
+                    $menu[$node['id']]->setParent($dummyParentNode);
+                    $createdNodes[$node['id']] = $node['parent']['id'];
+                    $this->removeNodeFromParentArray($node['id'], $parentNodes);
+                }elseif(is_long($node['parent']['value'])){/* Assign existing parent. */
+                    $menu[$node['id']]->setParent($this->findOneBy(['id' => $node['parent']['value']]));
+                    $createdNodes[$node['id']] = $node['parent']['id'];
+                    $this->removeNodeFromParentArray($node['id'], $parentNodes);
+                }else{
+                    /* If nodes are created via parents first order.
+                     * We'll not need to first create a parent and then set it. */
+                    if(isset($createdNodes[$node['parent']['id']]) ){
+                        $menu[$node['id']]->setParent($menu[$node['parent']['id']]);
+                        $createdNodes[$node['id']] = $node['parent']['id'];
+                    }
+                }
+                $this->_em->persist($menu[$node['id']]);
+            }
+            $this->_em->flush();
+            $this->assignTheCorrectValuesForParentAndMoveArray($menu, $parentNodes);
+        }
+
+        unset($menu, $createdNodes);
+        if(count($parentNodes)){
+            $menu = [];
+            foreach($parentNodes as $node){
+                $menu[$node['id']] = $this->findOneBy(['id' => $node['value']]);
+
+                if($node['parent']['id'] === 0){/* Assign as root node. */
+                    $menu[$node['id']]->setParent($dummyParentNode);
+                }elseif(is_long($node['parent']['value'])){/* Assign existing parent. */
+                    $menu[$node['id']]->setParent($this->findOneBy(['id' => $node['parent']['value']]));
+                }
+                $this->_em->persist($menu[$node['id']]);
+            }
+            $this->_em->flush();
+            unset($menu);
+        }
+
+        /* Nodes alignment change */
+        if(count($movedNodes) > 0){
+            foreach($movedNodes as $node){
+                $nodeToMove = $this->findOneById($node['value']);
+                $nodeMethod = explode('_', $node['sibling']);
+                $nodeAsSibling = $this->findOneById($nodeMethod[2]);
+                $nodeMethod = $nodeMethod[0];
+                switch($nodeMethod){
+                    case 'movedown':
+                        $this->persistAsNextSiblingOf($nodeToMove, $nodeAsSibling);
+                        break;
+                    case 'moveup':
+                        $this->persistAsPrevSiblingOf($nodeToMove, $nodeAsSibling);
+                        break;
+                }
+            }
+            $this->_em->flush();
+        }
+    }
+
+    protected function assignTheCorrectValuesForParentAndMoveArray(array $arrWithValues, array &$arrToChange, $true = 0){
+        if($true && count($arrToChange) > 4){
+            $arrToChange['value'] = $arrWithValues[$arrToChange['id']]->getId();
+            return;
+        }
+
+        foreach ($arrToChange as &$value) {
+            if(isset($value['value'])){
+                $value['value'] = $arrWithValues[$value['id']]->getId();
+            }
+
+            if(isset($value['parent']) && is_array($value['parent'])){
+                $this->assignTheCorrectValuesForParentAndMoveArray($arrWithValues, $value['parent'], 1);
+            }
+        }
+    }
+
+    /**
+     * 
+     * @param array $nodes
+     * @return array
+     */
+    protected function getMyTree(array $nodes = []) : array
     {
         $config = ['level' => 'lvl'];
         $nestedTree = [];
@@ -65,7 +194,12 @@ class MenuRepository extends NestedTreeRepository{
         return $nestedTree;
     }
 
-    protected function createPickleTreeArr(array $nodes = [])
+    /**
+     * 
+     * @param array $nodes
+     * @return array
+     */
+    protected function createPickleTreeArr(array $nodes = []) : array
     {
         $nestedTree = [];
         $index = 0;
@@ -110,69 +244,35 @@ class MenuRepository extends NestedTreeRepository{
         return $nestedTree;
     }
 
-    public function getPickleTreeArray(string $menuRootNodeLabel = 'node'){
-        $arr = [];
-        try{
-            $this->bindingRootNode = $this->findOneBy(['slug' => $menuRootNodeLabel]);
-            if($this->bindingRootNode !== null){
-                $queryBuilder = $this->childrenQueryBuilder($this->bindingRootNode , false, ['root', 'lft']);
-                $arr = $queryBuilder->getQuery()->setHint(\Doctrine\ORM\Query::HINT_INCLUDE_META_COLUMNS, true)->getArrayResult();
-            }
-        }catch(\Exception $e){
-            throw $e;
+    /**
+     * 
+     * @param string $nodeKey
+     * @param array $arrNodeWithParents
+     * @return void
+     */
+    protected function removeNodeFromParentArray(string $nodeKey, array &$arrNodeWithParents = []):void{
+        if(isset($arrNodeWithParents[$nodeKey])){
+            unset($arrNodeWithParents[$nodeKey]);
         }
-
-        return $this->createPickleTreeArr($arr);
     }
 
-    public function insertUpdateDataCollectedViaForm(array $submittedData = [], Menu $dummyParentNode = null){
-        $menu = $createdNodes = [];
-        $newNodes = $submittedData['newNodes'];
-        $movedNodes = $submittedData['movedNodes'];
+    /**
+     * 
+     * @param array $postedData
+     * @return false|\LRPHPT\MenuTree\Entity\Menu::class
+     */
+    public function editPostedNode(array $postedData = []){
+        try{
+            $currentObj = $this->findOneBy(['id' => $postedData['id'], 'slug' => $postedData['slug']]);
+            $currentObj->setLabel($postedData['title']);
+            $currentObj->setRoute($postedData['route_name']);
+            $currentObj->setUri($postedData['uri']);
 
-        /* Start of node creation loop. */
-        if(count($newNodes) > 0){
-            foreach($newNodes as $node){
-                $menu[$node['id']] = new Menu();
-                $menu[$node['id']]->setLabel($node['title']);
-                $menu[$node['id']]->setRoute($node['route']);
-
-                if($node['parent']['id'] === 0){/* Assign as root node. */
-                    $menu[$node['id']]->setParent($dummyParentNode);
-                    $createdNodes[$node['id']] = $node['parent']['id'];
-                }elseif(is_long($node['parent']['value'])){/* Assign existing parent. */
-                    $menu[$node['id']]->setParent($this->findOneBy(['id' => $node['parent']['value']]));
-                    $createdNodes[$node['id']] = $node['parent']['id'];
-                }else{
-                    /* If nodes are created via parents first order.
-                     * We'll not need to first create a parent and then set it. */
-                    if(isset($createdNodes[$node['parent']['id']]) ){
-                        $menu[$node['id']]->setParent($menu[$node['parent']['id']]);
-                        $createdNodes[$node['id']] = $node['parent']['id'];
-                    }
-                }
-                $this->_em->persist($menu[$node['id']]);
-            }
+            $this->_em->persist($currentObj);
             $this->_em->flush();
-        }
-
-        /* Nodes alignment change */
-        if(count($movedNodes) > 0){
-            foreach($movedNodes as $node){
-                $nodeToMove = $this->findOneById($node['value']);
-                $nodeMethod = explode('_', $node['sibling']);
-                $nodeAsSibling = $this->findOneById($nodeMethod[2]);
-                $nodeMethod = $nodeMethod[0];
-                switch($nodeMethod){
-                    case 'movedown':
-                        $this->persistAsNextSiblingOf($nodeToMove, $nodeAsSibling);
-                        break;
-                    case 'moveup':
-                        $this->persistAsPrevSiblingOf($nodeToMove, $nodeAsSibling);
-                        break;
-                }
-            }
-            $this->_em->flush();
+            return $currentObj;
+        } catch (\Exception $ex) {
+            return false;
         }
     }
 }

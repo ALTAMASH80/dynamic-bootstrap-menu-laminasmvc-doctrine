@@ -97,9 +97,7 @@ class PickleTree {
                 } else {
                     node.parent = this.getNode(this.drag_target);
                 }
-                console.log(this.dragstartNode.parent.id);
-                console.log(node.old_parent.id);
-                console.log(node.old_parent.id === this.dragstartNode.parent.id);
+
                 if( node.old_parent.id !== this.dragstartNode.parent.id ){
                     //save node in an object array of ids
                     this.changeParentNodes[node.id] = node;
@@ -378,6 +376,12 @@ class PickleTree {
             id: 'node_' + id,
             //node title
             title: 'untitled ' + id,
+            //node element value
+            route: 'route ' + id,
+            //node element value
+            uri: 'uri ' + id,
+            //node element value
+            slug: 'uri ' + id,
             //node html elements
             elements: [],
             //node parent element
@@ -419,7 +423,6 @@ class PickleTree {
         //logged
         this.log('Node is created (' + node.id + ')');
         if (node.id.indexOf('lrphpt') > 0 ){
-            console.log('new node id is ' + node.id);
             this.nodeCreatedAtRuntime[node.id] = node;
         }
         //node is returned
@@ -463,6 +466,28 @@ class PickleTree {
         this.log('Node is created (' + node.id + ')');
         //return node
         return node;
+    }
+
+    /**
+     * 
+     * @param {JSON} jsonValues
+     * @returns {type} bool
+     */
+    updateNodeValues(jsonValues){
+        let updated = false;
+        try{
+            document.getElementById('a_dr_node_' + jsonValues.id).setAttribute('drag-title', jsonValues.title);
+            let ele = document.getElementById('a_toggle_node_' + jsonValues.id);
+            let changeText = ele.innerHTML.replace(this.nodeList[jsonValues.id].title, jsonValues.title);
+            ele.innerHTML = changeText;
+            this.nodeList[jsonValues.id].title = jsonValues.title;
+            this.nodeList[jsonValues.id].uri = jsonValues.uri;
+            this.nodeList[jsonValues.id].route = jsonValues.route_name;
+            updated = true;
+        }catch(e){
+            updated = false;
+        }
+        return updated;
     }
 
     /**
@@ -637,22 +662,15 @@ class PickleTree {
                     let next    = li.nextElementSibling;               // <-- Code changed
                     if (next != null) next = next.nextElementSibling;  // <-- Code inserted
                     let prev    = li.previousElementSibling;
-                    //console.log(clicked.classList.contains('fa-level-up'));
                     let node = this.getNode(e.target.parentNode.parentNode.parentNode.id.split('_')[1]);
-                    console.log(node);
+
                     if (clicked.classList.contains('fa-level-down')) {
                         ul.insertBefore(li, next);
                         this.saveNodeChanges(node, li, 'move-down');
                     } else if (clicked.classList.contains('fa-level-up')) {
                         ul.insertBefore(li, prev);
                         this.saveNodeChanges(node, li, 'move-up');
-                    } else if (clicked.classList.contains('fa-trash')) {
-                        li.remove();
-                        this.saveNodeChanges(node, li, 'delete');
-                    } else {
-                        this.saveNodeChanges(node, li, 'edit');
                     }
-                    //console.log(e.target.parentNode.parentNode.parentNode.id);
                 });
             }
         }
@@ -665,8 +683,6 @@ class PickleTree {
         }else if(action === 'move-up'){
             node.sibling = 'moveup_' + element.nextElementSibling.id;
             this.moveNodes[node.id] = node;
-        }else if(action === 'delete'){
-            this.deletedNodes[node.id] = node;
         }
     }
 
@@ -698,6 +714,9 @@ class PickleTree {
                     this.createNode({
                         n_value: list[i].n_id,
                         n_title: list[i].n_title,
+                        n_route: list[i].n_route,
+                        n_uri: list[i].n_uri,
+                        n_slug: list[i].n_slug,
                         n_id: list[i].n_id,
                         n_elements: list[i].n_elements,
                         n_parent: this.getNode(list[i].n_parentid),

@@ -60,4 +60,37 @@ class IndexController extends AbstractActionController{
         }
         return new ViewModel(['treeArray' => $arr, 'rootNode' => $dummyParentNode]);
     }
+
+    public function updateAction(){
+        $request = $this->getRequest();
+        $data = ['status' => '404', 'message' => 'Failure'];
+        $viewModel = new \Laminas\View\Model\JsonModel();
+        if($request->isPost() && $request->isXmlHttpRequest()){
+            $repo = $this->entityManager->getRepository(Menu::class);
+            $postDataArr = $request->getPost()->toArray();
+            $return = null;
+
+            $return = $repo->editPostedNode($postDataArr);
+            if($return){
+                $uow = $this->entityManager->getUnitOfWork();
+                $return = $uow->getOriginalEntityData($return);
+
+                $arrReturn = [
+                    'id' => $postDataArr['id'],
+                    'title' => $return['label'],
+                    'route_name' => $return['route'],
+                    'uri' => $return['uri'],
+                    'resource' => $return['resource'],
+                    'slug' => $return['slug'],
+                ];
+                unset($return);
+                $data['status'] = 200; 
+                $data['message'] = 'Success';
+                $data['data'] = $arrReturn;
+                $data['postedData']  = $postDataArr;
+            }
+        }
+
+        return $viewModel->setVariables($data);
+    }
 }
